@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: TDR Create API
+  version: 1.0.0
+paths:
+  /api/tdr/create:
+    post:
+      summary: Create TDR with external department reference
+      tags: [TDR]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tdrApplicationId, rid, owner, project, land]
+              properties:
+                tdrApplicationId:
+                  type: string
+                  example: APP-2026-001
+                rid:
+                  type: string
+                  example: RID-45
+                owner:
+                  type: object
+                project:
+                  type: object
+                land:
+                  type: object
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              example:
+                success: true
+                application_id: TDR-1714980000-AB12CD
+                tdrApplicationId: APP-2026-001
+                rid: RID-45
+                txId: 0xabc123
+                hash: sha256hash

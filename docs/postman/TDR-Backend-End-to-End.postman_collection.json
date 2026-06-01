@@ -1,0 +1,271 @@
+{
+  "info": {
+    "_postman_id": "tdr-e2e-collection-003",
+    "name": "TDR Backend E2E — Auth · Create · DRC · NewDRCOfOwner · Transfer · Utilization · History",
+    "description": "End-to-end Postman collection for the TDR backend.\n\nFlow:\n1. **0 Auth — Login** to fetch `apiKey` (auto-saved into collection variable `apiKey`).\n2. **1 Create TDR** — sends `rid` from request body (frontend-provided) and saves `application_id`, `tdrApplicationId`, `samagra_id`, `rid` into collection variables.\n3. **2 Upload DRC (multipart)** — sets project status to `DRC_GENERATED`. Attach two local files (`form4`, `drc_certificate`).\n4. **3 NewDRCOfOwner** — adds another DRC certificate entry for the same owner (and updates project DRC fields).\n5. **4 Transfer** — creates the recipient/independent owner row with the **same RID** as the source. Saves `recipient_application_id`, `recipient_rid`, `new_owner_application_id` into collection variables.\n6. **5 Utilization** — utilises some TDR/area from the source owner row.\n7. **6 History (read)** — every read API for Mongo + blockchain history.\n\nVariables:\n- `baseUrl` (default `http://localhost:3000`)\n- `apiKey` (auto-filled by Login test script)\n- `userId`, `password` (used by Login)\n- `application_id`, `tdrApplicationId`, `rid`, `samagra_id`, `recipient_application_id`, `recipient_rid`, `recipient_samagra_id`, `drc_id`, `drc_certificate_no` (auto-filled or pre-populated)\n\nAuth header: every protected request sends `x-api-key: {{apiKey}}` via collection-level auth.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "apiKey", "value": "" },
+    { "key": "userId", "value": "admin" },
+    { "key": "password", "value": "admin@123" },
+    { "key": "application_id", "value": "" },
+    { "key": "tdrApplicationId", "value": "" },
+    { "key": "rid", "value": "" },
+    { "key": "samagra_id", "value": "SMG123456789" },
+    { "key": "recipient_application_id", "value": "" },
+    { "key": "recipient_tdrApplicationId", "value": "" },
+    { "key": "recipient_rid", "value": "" },
+    { "key": "recipient_samagra_id", "value": "SMG999999999" },
+    { "key": "drc_id", "value": "DRC-1001" },
+    { "key": "drc_certificate_no", "value": "DRC-CERT-2026-001" },
+    { "key": "new_drc_id", "value": "DRC-NEW-1001" },
+    { "key": "new_drc_certificate_no", "value": "DRC-CERT-2026-NEW-001" }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "value", "value": "{{apiKey}}", "type": "string" },
+      { "key": "key", "value": "x-api-key", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "item": [
+    {
+      "name": "0 — Auth · Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const j = pm.response.json();",
+              "  const apiKey = (j && j.data && j.data.apiKey) || j.apiKey;",
+              "  if (apiKey) pm.collectionVariables.set('apiKey', apiKey);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/login",
+        "description": "Login to receive an apiKey. The test script auto-saves `data.apiKey` into the collection variable `apiKey` and every subsequent request uses it via the `x-api-key` header."
+      }
+    },
+    {
+      "name": "1 — Create TDR",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const j = pm.response.json();",
+              "  if (j.application_id) pm.collectionVariables.set('application_id', j.application_id);",
+              "  if (j.tdrApplicationId) pm.collectionVariables.set('tdrApplicationId', j.tdrApplicationId);",
+              "  if (j.rid) pm.collectionVariables.set('rid', j.rid);",
+              "  if (j.samagra_id) pm.collectionVariables.set('samagra_id', j.samagra_id);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"tdrApplicationId\": \"TDRAPP-E2E-{{$timestamp}}\",\n  \"rid\": \"RID-E2E-{{$timestamp}}\",\n  \"owner\": {\n    \"name\": \"Rajesh Kumar\",\n    \"samagra_id\": \"{{samagra_id}}\",\n    \"mobile\": \"9876543210\",\n    \"email\": \"owner@example.com\",\n    \"address\": \"Bhopal\",\n    \"owner_type\": \"INDIVIDUAL\"\n  },\n  \"project\": {\n    \"project_name\": \"Road widening TDR\",\n    \"district\": \"Bhopal\",\n    \"tehsil\": \"Huzur\",\n    \"village\": \"Sample\",\n    \"project_stage\": \"APPROVED\",\n    \"status\": \"CREATED\"\n  },\n  \"land\": {\n    \"khasra_no\": \"123/1\",\n    \"total_area\": 1000,\n    \"proposed_area\": 1000,\n    \"value_tdr\": 200000\n  },\n  \"plots\": [],\n  \"documents\": {}\n}"
+        },
+        "url": "{{baseUrl}}/api/tdr/create",
+        "description": "201 response sets `application_id`, `tdrApplicationId`, `rid`, `samagra_id` into collection variables via the Tests script.\n\nImportant: `rid` is sent by frontend/client in request body. Backend does not generate RID on create. `samagra_id` is part of `owner` in the request and is also echoed at the top level of the response for convenience."
+      }
+    },
+    {
+      "name": "2 — Upload DRC (multipart)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "application_id", "type": "text", "value": "{{application_id}}" },
+            { "key": "samagra_id", "type": "text", "value": "{{samagra_id}}" },
+            { "key": "drc_id", "type": "text", "value": "{{drc_id}}" },
+            { "key": "drc_certificate_no", "type": "text", "value": "{{drc_certificate_no}}" },
+            { "key": "drc_generation_dt", "type": "text", "value": "2026-05-11T10:00:00.000Z" },
+            { "key": "form4", "type": "file", "src": "" },
+            { "key": "drc_certificate", "type": "file", "src": "" }
+          ]
+        },
+        "url": "{{baseUrl}}/api/tdr/drc",
+        "description": "Pick two local files for `form4` and `drc_certificate`. Project status moves to `DRC_GENERATED` and a `pushUpdateAsset` blockchain event is recorded."
+      }
+    },
+    {
+      "name": "3 — NewDRCOfOwner",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"querytype\": \"INSERT\",\n  \"application_id\": \"{{application_id}}\",\n  \"owner_id\": \"OWNER-001\",\n  \"samagra_id\": \"{{samagra_id}}\",\n  \"drc_certificate_doc_name\": \"new_drc_cert.pdf\",\n  \"drc_certificate_doc_path\": \"/uploads/drc/new_drc_cert.pdf\",\n  \"drc_receipt_no\": \"RCPT-2026-001\",\n  \"drc_file_no\": \"FILE-2026-001\",\n  \"isSigned\": \"Y\",\n  \"is_digital_sign\": \"Y\",\n  \"tdr_value\": \"200000\",\n  \"collector_guideline_rate\": 100,\n  \"multiplier_factor\": 2,\n  \"drc_id\": \"{{new_drc_id}}\",\n  \"drc_certificate_no\": \"{{new_drc_certificate_no}}\",\n  \"drc_generation_dt\": \"2026-05-12T10:00:00.000Z\"\n}"
+        },
+        "url": "{{baseUrl}}/api/User/NewDRCOfOwner",
+        "description": "Adds a new DRC entry for the selected application + Samagra owner. Lookup is by `application_id` + `samagra_id`.\n\nThis API also makes the application DRC-ready (same as `2 Upload DRC`):\n- sets `project.drc_id`, `project.drc_certificate_no`, `project.drc_generation_dt`\n- sets `project.status = 'DRC_GENERATED'`\n- sets `documents.drc_certificate` (using `drc_certificate_doc_path` as `file_url` + auto hash)\n\nAfter calling this, **Transfer (4)** and **Utilization (5)** for the same `application_id` + `samagra_id` will succeed (no more `DRC_NOT_READY`).\n\nDuplicate checks:\n- same `drc_certificate_no` reused for same `samagra_id` → 409 `DRC_CERTIFICATE_REUSE`\n- same `drc_id` reused for same `samagra_id` → 409 `DRC_ID_REUSE`"
+      }
+    },
+    {
+      "name": "4 — Transfer (recipient row reuses same RID)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "try {",
+              "  const j = pm.response.json();",
+              "  if (j.recipient_application_id) pm.collectionVariables.set('recipient_application_id', j.recipient_application_id);",
+              "  if (j.recipient_tdrApplicationId) pm.collectionVariables.set('recipient_tdrApplicationId', j.recipient_tdrApplicationId);",
+              "  if (j.recipient_rid) pm.collectionVariables.set('recipient_rid', j.recipient_rid);",
+              "} catch (e) {}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"application_id\": \"{{application_id}}\",\n  \"samagra_id\": \"{{samagra_id}}\",\n  \"trn_id\": \"TRN-{{$timestamp}}\",\n  \"owner_from\": \"Rajesh Kumar\",\n  \"transferred_area\": 100,\n  \"trn_date\": \"2026-05-11T10:00:00.000Z\",\n  \"status\": \"TRANSFERRED\",\n  \"transferee_owner\": {\n    \"owner_id\": \"OWNER-NEW-001\",\n    \"owner_name\": \"New Owner Name\",\n    \"samagra_id\": \"{{recipient_samagra_id}}\",\n    \"mobile\": \"9876543210\",\n    \"email\": \"newowner@example.com\",\n    \"address\": \"Bhopal\",\n    \"owner_type\": \"INDIVIDUAL\",\n    \"gender\": \"MALE\",\n    \"dob\": \"1995-01-01\"\n  }\n}"
+        },
+        "url": "{{baseUrl}}/api/User/InsertTransferRequest",
+        "description": "Requires DRC ready on source (use `2 Upload DRC` or have `project.status = DRC_GENERATED` / `ACTIVE` + DRC document). Optional `trn_value_tdr` overrides auto valuation (= `collector_guideline_rate * multiplier_factor * transferred_area`).\n\nImportant: the recipient row uses the **same RID** as the source — `recipient_rid === source_rid`. The recipient is created as an independent application with its own `application_id` and `tdrApplicationId`."
+      }
+    },
+    {
+      "name": "5 — Utilization",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"application_id\": \"{{application_id}}\",\n  \"samagra_id\": \"{{samagra_id}}\",\n  \"utilization_id\": \"UTIL-{{$timestamp}}\",\n  \"drc_id\": \"{{drc_id}}\",\n  \"drc_certificate_no\": \"{{drc_certificate_no}}\",\n  \"utilized_by\": \"Rajesh Kumar\",\n  \"utilized_area\": 50,\n  \"utilization_purpose\": \"Road Development\",\n  \"utilization_date\": \"2026-05-11T10:00:00.000Z\",\n  \"status\": \"COMPLETED\",\n  \"remarks\": \"TDR utilized for government project\"\n}"
+        },
+        "url": "{{baseUrl}}/api/User/InsertUtilizationRequest",
+        "description": "Run against the source owner row before/after transfer, or adjust `application_id` / `samagra_id` for the row you want to consume. Optional `utilized_value_tdr` overrides auto valuation."
+      }
+    },
+    {
+      "name": "6 — History (read)",
+      "item": [
+        {
+          "name": "GET full TDR (Mongo) — application + samagra_id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tdr/{{application_id}}/full?samagra_id={{samagra_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tdr", "{{application_id}}", "full"],
+              "query": [{ "key": "samagra_id", "value": "{{samagra_id}}" }]
+            },
+            "description": "Full Mongo document for this `application_id` + `owner.samagra_id`, with derived balances (`total_tdr_value`, `transfer_tdr_value`, `utilized_tdr_value`, `remaining_tdr_value`)."
+          }
+        },
+        {
+          "name": "GET blockchain history (one application)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/{{application_id}}/blockchain/history",
+            "description": "Chain `getHistory` / asset history + area/TDR summary for this application."
+          }
+        },
+        {
+          "name": "GET all applications + chain history each",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/history/applications",
+            "description": "Every application row: `samagra_id`, `source_application_id`, transfers/utilizations counts, area/TDR summary, blockchain history."
+          }
+        },
+        {
+          "name": "GET all DRC by RID (one API for RID → DRC)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/rid/{{rid}}/drc-info",
+            "description": "Single API: pass an RID and get every Mongo row (source + every recipient) for that RID with DRC fields (`drc_id`, `drc_certificate_no`, `drc_generation_dt`, `drc_certificate` document, status, balances, samagra_id, owner_name)."
+          }
+        },
+        {
+          "name": "GET all DRC by RID — recipient RID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/rid/{{recipient_rid}}/drc-info",
+            "description": "Same endpoint hit with `recipient_rid` — useful to confirm that the recipient row reuses the same RID as the source after a transfer. Both calls should return the same RID/data set."
+          }
+        },
+        {
+          "name": "GET all history by RID (Mongo + chain)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/rid/{{rid}}/history",
+            "description": "Per application sharing this RID: ledger, transfers, utilizations, area/TDR summary, owner, plus chain `getHistory` per app."
+          }
+        },
+        {
+          "name": "GET all transfers (flattened)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/transfers/all",
+            "description": "Each transfer event with `samagra_id`, `owner_name`, `source_application_id`, and correct area/TDR summary."
+          }
+        },
+        {
+          "name": "GET all utilizations (flattened)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/utilizations/all",
+            "description": "Each utilization with `samagra_id`, `owner_name`, `source_application_id`, and correct area/TDR summary."
+          }
+        },
+        {
+          "name": "GET all DRC certificates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/drc-certificates/all",
+            "description": "All rows with any DRC metadata (drc_id / drc_certificate_no / drc_certificate document) + samagra_id."
+          }
+        },
+        {
+          "name": "GET DRC details by drc_id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/tdr/drc/{{drc_id}}",
+            "description": "Single application snapshot for this `project.drc_id` (transfers/utilizations arrays stripped from the response)."
+          }
+        }
+      ]
+    }
+  ]
+}

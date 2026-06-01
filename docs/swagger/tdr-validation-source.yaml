@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info:
+  title: TDR Source Validation API
+  version: 1.0.0
+paths:
+  /api/tdr/validate-source-data:
+    post:
+      summary: Validate external source data against blockchain hash
+      tags: [TDR Validation]
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [application_id, rid]
+              properties:
+                application_id:
+                  type: string
+                  example: APP-001
+                rid:
+                  type: string
+                  example: RID-001
+      responses:
+        "200":
+          description: Hash match
+        "409":
+          description: Tamper detected
+        "502":
+          description: External system unavailable
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
