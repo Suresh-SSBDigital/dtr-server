@@ -15,8 +15,7 @@
     "strictNullChecks": true,
     "noEmitOnError": true,
     "sourceMap": true,
-    "allowJs": false,
-    "ignoreDeprecations": "5.0"
+    "allowJs": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
