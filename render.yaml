@@ -8,3 +8,5 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: ALLOWED_ORIGINS
+        value: https://tdr-frontend-bg3h.onrender.com,http://localhost:3000,http://localhost:5173
