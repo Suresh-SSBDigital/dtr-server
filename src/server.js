@@ -86,7 +86,7 @@ app.get('/health', (req, res) => {
 });
 const PORT = Number(process.env.PORT) || 3000;
 
-const startServer = async (): Promise<void> => {
+const startServer = async () => {
   try {
     console.log('MONGO URI =>', process.env.MONGO_URI);
     await connectDB();
