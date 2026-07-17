@@ -18,9 +18,6 @@
     "allowJs": false,
     "declaration": true,
     "declarationMap": true,
-    "listFiles": false,
-    "ignoreDeprecations": "6.0"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+    "listFiles": false
+  }
 }
