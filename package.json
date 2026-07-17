@@ -4,9 +4,9 @@
   "description": "Production TDR Blockchain API Backend",
   "main": "src/server.ts",
   "scripts": {
-    "start": "node dist/server.js",
-    "dev": "nodemon --watch src/**/*.ts --exec ts-node src/server.ts",
-    "build": "tsc",
+    "start": "node init && node dist/server.js",
+    "dev": "node init && nodemon --watch src/**/*.ts --exec ts-node src/server.ts",
+    "build": "node init && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -28,7 +28,8 @@
     "joi": "^17.13.1",
     "mongoose": "^9.6.0",
     "morgan": "^1.10.0",
-    "multer": "^2.1.1"
+    "multer": "^2.1.1",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
